@@ -34,25 +34,25 @@ public class AndroidLauncher extends AndroidApplication implements IActivityRequ
             switch(msg.what) {
                 case SHOW_ADS:
                 {
-                    interstitial.show();
+                    //interstitial.show();
                     break;
                 }
                 case LOAD_ADS:
                 {
-                    interstitial = new InterstitialAd(getApplicationContext());
-                    interstitial.setAdUnitId("ca-app-pub-6798653878803807/3584243573");
+                    //interstitial = new InterstitialAd(getApplicationContext());
+                    //interstitial.setAdUnitId("__AD_CODE__");
 
-                    adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+                    //adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 
 
-                    interstitial.loadAd(adRequestBuilder.build());
-                    interstitial.setAdListener(new AdListener() {
-                        @Override
-                        public void onAdClosed() {
-                            AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();
-                            interstitial.loadAd(adRequest);
-                        }
-                    });
+                    //interstitial.loadAd(adRequestBuilder.build());
+                    //interstitial.setAdListener(new AdListener() {
+                    //    @Override
+                    //    public void onAdClosed() {
+                    //        AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();
+                    //        interstitial.loadAd(adRequest);
+                    //    }
+                    //});
                     break;
                 }
             }
