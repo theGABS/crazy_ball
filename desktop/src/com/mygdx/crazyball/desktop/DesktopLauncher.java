@@ -1,5 +1,6 @@
 package com.mygdx.crazyball.desktop;
 
+import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.mygdx.crazyball.IActivityRequestHandler;
@@ -12,6 +13,9 @@ public class DesktopLauncher implements IActivityRequestHandler {
             application = new DesktopLauncher();
         }
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
+        config.height = 800;
+        config.width = 480;
+        config.addIcon("../res/drawable-hdpi/ic_launcher.png", Files.FileType.Internal);
 		new LwjglApplication(new MyGame(application), config);
 	}
 
