@@ -3,7 +3,8 @@ package com.mygdx.crazyball;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
@@ -26,7 +27,11 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.I18NBundle;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -136,20 +141,42 @@ public class MyGame extends Game implements ApplicationListener{
         }
     }
 
-    SpriteBatch batch;
-    BitmapFont font;
+    SpriteBatch        batch;
+    BitmapFont         font;
     OrthographicCamera camera, fullCamera;
-    public IActivityRequestHandler myRequestHandler;
-    public MyGame(IActivityRequestHandler handler) {
-        myRequestHandler = handler;
+    MenuScreen         menuScreen;
+    GameScreen         gameScreen;
+    I18NBundle         myBundle;
+    Texture            background;
+
+    public interface RequestHandler {
+        public void confirm(ConfirmInterface confirmInterface);
+        public void loadAds();
+        public void showAds();
     }
 
-    MenuScreen menuScreen;
-    GameScreen gameScreen;
+    public interface ConfirmInterface {
+        public void yes();
+        public void no();
+        public void showLibGDX();
+    }
 
-    I18NBundle myBundle;
+    RequestHandler requestHandler;
 
-    Texture background;
+    public MyGame(RequestHandler requestHandler)
+    {
+        this.requestHandler = requestHandler;
+    }
+
+    private void loadAds(){
+        requestHandler.loadAds();
+    }
+
+    private void showAds(){
+        requestHandler.showAds();
+    }
+
+
 
     @Override
     public void create() {
@@ -162,14 +189,16 @@ public class MyGame extends Game implements ApplicationListener{
         gameScreen =     new GameScreen(this);
 
         setScreen(menuScreen);
-        myRequestHandler.showAds(false); // Its load....  todo rename
+        loadAds();
+
     }
 
-    class MenuScreen implements Screen  {
+    class MenuScreen extends ScreenAdapter {
         float colorValue = 0;
-        MyGame game;
         float time;
+        MyGame game;
         Texture line = new Texture("line.png");
+
 
 
 
@@ -178,9 +207,8 @@ public class MyGame extends Game implements ApplicationListener{
         }
 
         @Override
-        public void render(float delta) {
-            time += delta;
-            colorValue = (float) ((1 + Math.sin(time*1.6f)) * 0.5f);
+        public void render(float dt) {
+            colorValue = (float) ((1 + Math.sin((time += dt)*1.6f)) * 0.5f);
 
 
             font.setColor(new Color(1, 1, 1, 1));
@@ -198,6 +226,7 @@ public class MyGame extends Game implements ApplicationListener{
             float sm;
             for(int j = 0; j < 2; j++) {
                 float acm = fullCamera.viewportHeight*0.98f;
+                //TODO in new libGDX supported font-shadow
 //                if(j == 0){
 //                    sm = 1;
 //                    font.setColor(new Color(0, 0, 0, 1));
@@ -228,17 +257,14 @@ public class MyGame extends Game implements ApplicationListener{
 
             batch.end();
 
-            if (Gdx.input.justTouched()) {
-                game.setScreen(game.gameScreen);
-            }
+            if (Gdx.input.justTouched()) game.setScreen(game.gameScreen);
+
+
         }
 
 
         @Override
         public void resize(int width, int height) {
-//            if(width*4/3.0f >= height){
-//                Gdx.graphics.setDisplayMode((int) (height*0.75f), height, false);
-//            }
             camera.viewportWidth = 480f;
             camera.viewportHeight = 480f * height/width;
             camera.position.set(camera.viewportWidth / 2f, camera.viewportHeight/2f , 0); // show in top
@@ -251,21 +277,6 @@ public class MyGame extends Game implements ApplicationListener{
 
             font = fontGeneration(width/13);
         }
-
-        @Override
-        public void show() {  }
-
-        @Override
-        public void hide() {  }
-
-        @Override
-        public void pause() {  }
-
-        @Override
-        public void resume() {  }
-
-        @Override
-        public void dispose() {  }
     }
 
     enum State{
@@ -273,8 +284,48 @@ public class MyGame extends Game implements ApplicationListener{
         RUN,
     }
 
+    class GameScreen extends ScreenAdapter implements InputProcessor {
 
-    class GameScreen implements Screen, InputProcessor {
+        private void showConfirmDialog(){
+            requestHandler.confirm(new ConfirmInterface(){
+                @Override
+                public void yes() {
+                    Gdx.app.exit();
+                }
+
+                @Override
+                public void no() {
+                    // The user clicked no! Do nothing
+                }
+
+                @Override
+                public void showLibGDX(){
+                    showDialog();
+                }
+            });
+        }
+
+        private Stage stage;
+        private Skin skin;
+
+        void showDialog(){
+            new Dialog("confirm exit", skin) {
+                {
+                    text("rly exit");
+                    button("yes", "yes");
+                    button("no", "no");
+                }
+
+                @Override
+                protected void result(final Object object) {
+                    if(object.toString() == "yes"){
+                        Gdx.app.exit();
+                    }
+                }
+            }.show(stage);
+        }
+
+
         @Override
         public boolean mouseMoved(int screenX, int screenY) { return false; }
 
@@ -286,7 +337,7 @@ public class MyGame extends Game implements ApplicationListener{
             if(keycode == Input.Keys.BACK || keycode == Input.Keys.ESCAPE){
                 switch (state) {
                 case PAUSE:
-                    Gdx.app.exit();
+                    showConfirmDialog();
                     break;
                 case RUN:
                     state = State.PAUSE;
@@ -308,13 +359,13 @@ public class MyGame extends Game implements ApplicationListener{
         public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
 
         @Override
-        public void show() {  }
+        public void show() {
+            InputMultiplexer inputMultiplexer = new InputMultiplexer();
+            inputMultiplexer.addProcessor(stage = new Stage());
+            inputMultiplexer.addProcessor(this);
+            Gdx.input.setInputProcessor(inputMultiplexer);
+            skin = new Skin(Gdx.files.internal("uiskin.json")); }
 
-        @Override
-        public void hide() {  }
-
-        @Override
-        public void dispose() {  }
 
         @Override
         public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -323,7 +374,9 @@ public class MyGame extends Game implements ApplicationListener{
                 state = State.RUN;
                 break;
             case RUN:
-                createBall(new Vector2(screenX - Gdx.graphics.getWidth() / 2f, -screenY).scl(0.075f * 480 / Gdx.graphics.getWidth()));
+                if (timePassed < 0.3)
+                    break;
+                createBall(new Vector2(screenX - Gdx.graphics.getWidth() / 2f, -screenY).scl(0.125f * 480 / Gdx.graphics.getHeight()));
             }
             return true;
         }
@@ -334,7 +387,7 @@ public class MyGame extends Game implements ApplicationListener{
 
 
 
-        Texture  tFloor;
+        Texture floor;
         ShapeRenderer shapeRenderer;
         FPSLogger fpsLogger =    new FPSLogger();
         Random rn =              new Random();
@@ -355,6 +408,8 @@ public class MyGame extends Game implements ApplicationListener{
         MyGame    game;
 
         public void createBall(Vector2 velocity, Vector2 position ){
+
+
             BodyDef bodyDef = new BodyDef();
             bodyDef.type = BodyType.DynamicBody;
 
@@ -391,7 +446,7 @@ public class MyGame extends Game implements ApplicationListener{
             tBall[2] = new Texture("ballgreen.png");
             tBall[3] = new Texture("ballpurple.png");
             tBall[4] = new Texture("ballyellow.png");
-            tFloor   = new Texture("floor3.jpg");
+            floor = new Texture("floor3.jpg");
 
 
 
@@ -420,7 +475,7 @@ public class MyGame extends Game implements ApplicationListener{
             score = level*100;
 
             if(!first){
-                myRequestHandler.showAds(true);
+                showAds();
             }
 
             for(int i = pBalls.size() - 1; i >= 0; i--){
@@ -439,23 +494,20 @@ public class MyGame extends Game implements ApplicationListener{
 
         @Override
         public void render(float dt) {
-
+            fpsLogger.log();
             level = score / 100;
             timeShot = (float) (1.8 * Math.pow(2.7, -level/5) + 0.4);
-
-            fpsLogger.log();
-            //Gdx.app.log(Float.toString(dt),"3434");
 
 
             for(int i = 0; i < pBalls.size(); i++){
                 pBalls.get(i).body.setUserData(i);
             }
 
-            Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT );
+            //Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT );
 
             batch.setProjectionMatrix(fullCamera.combined);
             batch.begin();
-            batch.draw(tFloor, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth()*tFloor.getHeight()/tFloor.getWidth());
+            batch.draw(floor, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth()* floor.getHeight()/ floor.getWidth());
             batch.end();
 
             batch.setProjectionMatrix(camera.combined);
@@ -573,15 +625,33 @@ public class MyGame extends Game implements ApplicationListener{
             batch.end();
             batch.setColor(1, 1, 1, 1f);
 
+            stage.act(dt);
+            stage.draw();
+
 
         }
 
         @Override
         public void resize(int width, int height) {
+
+            stage.setViewport(new ExtendViewport(width, height));
+            stage.getViewport().update(width, height, true);
+
+
             float aspectRatio = (float) width / (float) height;
 
+//            camera.viewportWidth = 480f;
+//            camera.viewportHeight = 640f * height / width * 480 / 640;
+//            camera.position.set(camera.viewportWidth / 2f, 0 - camera.viewportHeight / 2f + 640, 0);
+//            camera.update();
+
+//            fullCamera.viewportWidth = Gdx.graphics.getWidth();
+//            fullCamera.viewportHeight = Gdx.graphics.getHeight();
+//            fullCamera.position.set(fullCamera.viewportWidth / 2f, fullCamera.viewportHeight / 2f, 0);
+//            fullCamera.update();
 
 // This better, but hard, maybe will be in next version
+
             if(width * 640 > height * 480){
                 camera.viewportWidth = 480f *width/height *640/480;
                 camera.viewportHeight = 640f;
@@ -595,10 +665,7 @@ public class MyGame extends Game implements ApplicationListener{
             }
 
 
-//            camera.viewportWidth = 480f;
-//            camera.viewportHeight = 640f * height / width * 480 / 640;
-//            camera.position.set(camera.viewportWidth / 2f, 0 - camera.viewportHeight / 2f + 640, 0);
-//            camera.update();
+
 
             if(width * 640 > height * 480){
                 fullCamera.viewportWidth = height*aspectRatio;
@@ -615,20 +682,9 @@ public class MyGame extends Game implements ApplicationListener{
             }
 
 
-//            fullCamera.viewportWidth = Gdx.graphics.getWidth();
-//            fullCamera.viewportHeight = Gdx.graphics.getHeight();
-//            fullCamera.position.set(fullCamera.viewportWidth / 2f, fullCamera.viewportHeight / 2f, 0);
-//            fullCamera.update();
 
 
-        }
 
-        @Override
-        public void pause() {
-        }
-
-        @Override
-        public void resume() {
         }
     }
 }

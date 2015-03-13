@@ -6,7 +6,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.mygdx.crazyball.IActivityRequestHandler;
 import com.mygdx.crazyball.MyGame;
 
-public class DesktopLauncher implements IActivityRequestHandler {
+public class DesktopLauncher implements  MyGame.RequestHandler{
     private static DesktopLauncher application;
 	public static void main (String[] arg) {
         if (application == null) {
@@ -19,9 +19,19 @@ public class DesktopLauncher implements IActivityRequestHandler {
 		new LwjglApplication(new MyGame(application), config);
 	}
 
-    @Override
-    public void showAds(boolean show) {
-        // TODO Auto-generated method stub
 
+    @Override
+    public void confirm(final MyGame.ConfirmInterface confirmInterface) {
+        confirmInterface.showLibGDX();
+    }
+
+    @Override
+    public void loadAds(){
+        // for desktop no advertising
+    }
+
+    @Override
+    public void showAds(){
+        // for desktop no advertising
     }
 }

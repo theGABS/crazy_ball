@@ -1,5 +1,7 @@
 package com.mygdx.crazyball.android;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -20,44 +22,12 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.InterstitialAd;
 
 
-public class AndroidLauncher extends AndroidApplication implements IActivityRequestHandler {
+public class AndroidLauncher extends AndroidApplication implements MyGame.RequestHandler {
     InterstitialAd interstitial;
-    AdView adView;
     AdRequest.Builder adRequestBuilder;
-    private final int SHOW_ADS = 1;
-    private final int LOAD_ADS = 0;
-
-    protected Handler handler = new Handler()
-    {
-        @Override
-        public void handleMessage(Message msg) {
-            switch(msg.what) {
-                case SHOW_ADS:
-                {
-                    interstitial.show();
-                    break;
-                }
-                case LOAD_ADS:
-                {
-                    interstitial = new InterstitialAd(getApplicationContext());
-                    interstitial.setAdUnitId("ca-app-pub-6798653878803807/3584243573");
-
-                    adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+    View gameView;
 
 
-                    interstitial.loadAd(adRequestBuilder.build());
-                    interstitial.setAdListener(new AdListener() {
-                        @Override
-                        public void onAdClosed() {
-                            AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();
-                            interstitial.loadAd(adRequest);
-                        }
-                    });
-                    break;
-                }
-            }
-        }
-    };
 
 
 	@Override
@@ -72,7 +42,7 @@ public class AndroidLauncher extends AndroidApplication implements IActivityRequ
         layout.setOrientation(LinearLayout.VERTICAL);
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
-        View gameView = initializeForView(new MyGame(this), config);
+        gameView = initializeForView(new MyGame(this), config);
 
 
 
@@ -82,8 +52,66 @@ public class AndroidLauncher extends AndroidApplication implements IActivityRequ
 
 	}
 
+
     @Override
-    public void showAds(boolean show) {
-        handler.sendEmptyMessage(show ? SHOW_ADS : LOAD_ADS);
+    public void confirm(final MyGame.ConfirmInterface confirmInterface) {
+        gameView.post(new Runnable() {
+            public void run() {
+                new AlertDialog.Builder(AndroidLauncher.this)
+                        .setTitle("Confirm")
+                        .setMessage("you really want to quit?")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                confirmInterface.yes();
+                                dialog.cancel();
+                            }
+                        })
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        })
+                        .create().show();
+            }
+        });
+    }
+
+    @Override
+    public void loadAds(){
+
+        gameView.post(new Runnable() {
+            public void run() {
+                interstitial = new InterstitialAd(getApplicationContext());
+                interstitial.setAdUnitId("ca-app-pub-6798653878803807/3584243573");
+
+                adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+
+
+                interstitial.loadAd(adRequestBuilder.build());
+                interstitial.setAdListener(new AdListener() {
+                    @Override
+                    public void onAdClosed() {
+                        AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();
+                        interstitial.loadAd(adRequest);
+                    }
+                });
+            }
+        });
+
+
+
+    }
+
+    @Override
+    public void showAds(){
+
+        gameView.post(new Runnable() {
+            public void run() {
+                interstitial.show();
+            }
+        });
+
     }
 }
