@@ -28,6 +28,41 @@ public class AndroidLauncher extends AndroidApplication implements MyGame.Reques
     View gameView;
 
 
+    private final int SHOW_ADS = 1;
+    private final int LOAD_ADS = 0;
+
+    protected Handler handler = new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what) {
+                case SHOW_ADS:
+                {
+                    //interstitial.show();
+                    break;
+                }
+                case LOAD_ADS:
+                {
+                    //interstitial = new InterstitialAd(getApplicationContext());
+                    //interstitial.setAdUnitId("__AD_CODE__");
+
+                    //adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+
+
+                    //interstitial.loadAd(adRequestBuilder.build());
+                    //interstitial.setAdListener(new AdListener() {
+                    //    @Override
+                    //    public void onAdClosed() {
+                    //        AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();
+                    //        interstitial.loadAd(adRequest);
+                    //    }
+                    //});
+                    break;
+                }
+            }
+        }
+    };
+
 
 
 	@Override
