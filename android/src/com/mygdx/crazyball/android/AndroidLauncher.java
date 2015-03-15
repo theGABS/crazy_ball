@@ -119,7 +119,7 @@ public class AndroidLauncher extends AndroidApplication implements MyGame.Reques
         gameView.post(new Runnable() {
             public void run() {
                 interstitial = new InterstitialAd(getApplicationContext());
-                interstitial.setAdUnitId("ca-app-pub-6798653878803807/3584243573");
+                interstitial.setAdUnitId("__AD_CODE__");
 
                 adRequestBuilder = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 
